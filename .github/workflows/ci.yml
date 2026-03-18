@@ -1,0 +1,50 @@
+# GitHub Actions CI — Python Script (runtime stdlib-only, dev toolchain: Ruff + Mypy)
+# 复制到项目 .github/workflows/ci.yml
+#
+# 与项目规范 §6 Auto Gate 保持一致，形成双重保障：
+#   本地: hooks-setup (pre-commit) + Auto Gate
+#   CI:   本 workflow
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dev dependencies
+        run: uv sync --frozen
+
+      # Auto Gate — 与项目规范 §6 完全一致
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+      - name: Ruff lint check
+        run: uv run ruff check .
+
+      - name: Mypy type check
+        run: uv run mypy script.py
+
+      - name: Run tests
+        run: python -m unittest discover -v
