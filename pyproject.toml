@@ -1,0 +1,56 @@
+[project]
+name = "copilot-quota"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[dependency-groups]
+dev = ["ruff", "mypy"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    # ===== 核心必选 =====
+    "E", "W",       # pycodestyle
+    "F",            # Pyflakes
+    "I",            # isort
+    "B",            # flake8-bugbear
+    "UP",           # pyupgrade
+    "N",            # pep8-naming
+    "S",            # Bandit 安全
+    "SIM",          # flake8-simplify
+    "T20",          # print 检测（脚本强制 logging）
+    "PLR", "PLW",   # Pylint 重构/警告
+    "TRY",          # tryceratops 异常
+    "G",            # logging-format（禁止 f-string 日志）
+    # ===== 建议项 =====
+    "ARG",          # 未使用参数
+    "C4",           # 推导式优化
+    "C90",          # 圈复杂度
+    "EM",           # 异常消息格式
+    "FBT",          # 布尔参数陷阱
+    "DTZ",          # 时区处理
+    "PERF",         # 性能
+    "ISC",          # 隐式字符串拼接
+    "SLOT",         # __slots__ 优化
+]
+
+# 安全红线规则：禁止自动修复（手动审查后才可处理）
+unfixable = ["S307", "S609", "S301", "S302", "S105", "S106", "S107"]
+
+# 测试文件特殊宽松
+[tool.ruff.lint.per-file-ignores]
+"test_*.py" = ["S101", "PLR2004", "ARG001"]
+
+# 圈复杂度上限
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true

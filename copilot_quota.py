@@ -11,9 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # 配置日志
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -32,11 +30,7 @@ def get_config() -> CopilotConfig:
     # 常见平台的 Copilot 鉴权文件存储路径
     paths = [
         Path.home() / ".config" / "github-copilot" / "hosts.json",
-        Path.home()
-        / "Library"
-        / "Application Support"
-        / "github-copilot"
-        / "hosts.json",
+        Path.home() / "Library" / "Application Support" / "github-copilot" / "hosts.json",
         Path.home() / ".local" / "share" / "opencode" / "auth.json",
         Path.home() / ".config" / "github-copilot" / "apps.json",
     ]
@@ -55,9 +49,7 @@ def get_config() -> CopilotConfig:
 
                 # 处理 OpenCode auth.json 格式
                 if "github-copilot" in data:
-                    token = data["github-copilot"].get("refresh") or data[
-                        "github-copilot"
-                    ].get("access")
+                    token = data["github-copilot"].get("refresh") or data["github-copilot"].get("access")
                     if token:
                         logger.info("Found token in: %s", path)
                         return CopilotConfig(github_token=str(token))
@@ -65,7 +57,8 @@ def get_config() -> CopilotConfig:
                 logger.warning("Failed to parse config file %s: %s", path, e)
                 continue
 
-    raise ValueError("无法自动找到 GitHub Token。请设置 GITHUB_TOKEN 环境变量。")
+    msg = "无法自动找到 GitHub Token。请设置 GITHUB_TOKEN 环境变量。"
+    raise ValueError(msg)
 
 
 def get_copilot_internal_token(oauth_token: str) -> str:
@@ -84,7 +77,7 @@ def get_copilot_internal_token(oauth_token: str) -> str:
         },
     )
     try:
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req) as resp:  # noqa: S310
             data = json.loads(resp.read())
             token = data.get("token")
             if token:
@@ -121,15 +114,18 @@ def get_quota_data(token: str, oauth_token: str) -> dict[str, object]:
     )
 
     try:
-        with urllib.request.urlopen(req) as resp:
-            return json.loads(resp.read())
+        with urllib.request.urlopen(req) as resp:  # noqa: S310
+            result: dict[str, object] = json.loads(resp.read())
+            return result
     except urllib.error.HTTPError as e:
         if token != oauth_token:
             logger.info("Retrying quota API with original OAuth token...")
             req.headers["Authorization"] = f"Bearer {oauth_token}"
-            with urllib.request.urlopen(req) as fallback_resp:
-                return json.loads(fallback_resp.read())
-        raise ValueError(f"Failed to fetch quota data: {e}") from e
+            with urllib.request.urlopen(req) as fallback_resp:  # noqa: S310
+                fallback_result: dict[str, object] = json.loads(fallback_resp.read())
+                return fallback_result
+        msg = f"Failed to fetch quota data: {e}"
+        raise ValueError(msg) from e
 
 
 def main() -> None:
@@ -145,18 +141,16 @@ def main() -> None:
 
         snapshots = user_data.get("quota_snapshots")
         if not isinstance(snapshots, dict):
-            print("❌ 未找到有效的数据格式。")
+            print("❌ 未找到有效的数据格式。")  # noqa: T201
             return
 
         premium = snapshots.get("premium_interactions")
         if not isinstance(premium, dict):
-            print(
-                "❌ 未找到 Premium requests 配额数据。可能您没有订阅 Copilot 或者尚未受限于此配额。"
-            )
+            print("❌ 未找到 Premium requests 配额数据。可能您没有订阅 Copilot 或者尚未受限于此配额。")  # noqa: T201
             return
 
         if premium.get("unlimited"):
-            print("🎉 您的 Premium requests 是无限配额 (Unlimited)。")
+            print("🎉 您的 Premium requests 是无限配额 (Unlimited)。")  # noqa: T201
             return
 
         entitlement = int(premium.get("entitlement", 0))
@@ -169,16 +163,16 @@ def main() -> None:
         plan = user_data.get("copilot_plan", "unknown")
         sku = user_data.get("access_type_sku", "unknown")
 
-        print("\n=== GitHub Copilot Premium 请求配额 ===")
-        print(f"👤 用户:     {login}")
-        print(f"📋 订阅计划: {plan}")
-        print(f"🏷️  SKU:     {sku}")
-        print(f"🔹 总配额:   {entitlement}")
-        print(f"🔸 已使用:   {used} (使用比例 {usage_ratio:.2f}%)")
-        print(f"✅ 剩余次数: {remaining}")
+        print("\n=== GitHub Copilot Premium 请求配额 ===")  # noqa: T201
+        print(f"👤 用户:     {login}")  # noqa: T201
+        print(f"📋 订阅计划: {plan}")  # noqa: T201
+        print(f"🏷️  SKU:     {sku}")  # noqa: T201
+        print(f"🔹 总配额:   {entitlement}")  # noqa: T201
+        print(f"🔸 已使用:   {used} (使用比例 {usage_ratio:.2f}%)")  # noqa: T201
+        print(f"✅ 剩余次数: {remaining}")  # noqa: T201
 
-    except (ValueError, OSError, urllib.error.URLError, json.JSONDecodeError) as e:
-        logger.error("An error occurred: %s", e)
+    except (ValueError, OSError, urllib.error.URLError, json.JSONDecodeError):
+        logger.exception("An error occurred")
 
 
 if __name__ == "__main__":

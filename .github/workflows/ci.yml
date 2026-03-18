@@ -44,7 +44,7 @@ jobs:
         run: uv run ruff check .
 
       - name: Mypy type check
-        run: uv run mypy script.py
+        run: uv run mypy copilot_quota.py
 
       - name: Run tests
         run: python -m unittest discover -v
